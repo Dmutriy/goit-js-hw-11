@@ -1,14 +1,51 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Page title</title>
+    <title>ImageSearch</title>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="https://img.icons8.com/color/search"
+    />
+
     <link rel="stylesheet" href="./sass/index.scss" />
     <script type="module" src="./index.js"></script>
   </head>
   <body>
-    <!-- ❗️❗️❗️ Add partials like so for every page -->
-    <include src="./partials/example.html"></include>
+    <div class="search-block">
+      <form class="search-form" id="search-form">
+        <input
+          type="text"
+          name="query"
+          id="searchQuery"
+          autocomplete="off"
+          placeholder="Знайдіть зображення..."
+        />
+        <button type="submit">
+          <img src="https://img.icons8.com/color/search" class="search-icon" />
+        </button>
+      </form>
+    </div>
+    <div class="container">
+      <div class="gallery" id="gallery"></div>
+    </div>
+    <button type="button" class="load-more is-hidden" id="load-more">ще</button>
+    <!-- spinner -->
+    <div class="lds-spinner load-more is-hidden" id="loading-container">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
   </body>
 </html>
