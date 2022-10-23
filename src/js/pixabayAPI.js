@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import { initNotiflix } from './initNotiflix';
 
 axios.defaults.baseURL = ' https://pixabay.com/api/';
 
@@ -54,7 +55,8 @@ export default class PixabayAPI {
     const pageAmount = totalHits / this.#perPage - this.#page;
     if (pageAmount < 0) {
       return Notify.info(
-        "We're sorry, but you've reached the end of search results."
+        'Вибачте, але ви досягли кінця результатів пошуку.',
+        initNotiflix
       );
     }
   }

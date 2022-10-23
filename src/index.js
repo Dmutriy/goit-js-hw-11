@@ -1,4 +1,5 @@
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import { initNotiflix } from './js/initNotiflix';
 
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
@@ -28,7 +29,8 @@ const callback = async function (entries, observer) {
       } catch (error) {
         Notify.failure(
           error.message,
-          'Sorry, something went wrong here. Please try again!'
+          'Вибачте, щось пішло не так. Будь ласка спробуйте ще раз!',
+          initNotiflix
         );
         clearPage();
       } finally {
@@ -55,7 +57,10 @@ const onSubmit = async event => {
   const query = searchQuery.value.trim().toLowerCase();
 
   if (!query) {
-    return Notify.failure('Oops, you should type something for search...');
+    return Notify.failure(
+      'Ой, ви повинні ввести щось для пошуку...',
+      initNotiflix
+    );
   }
 
   pixabay.query = query;
@@ -66,10 +71,14 @@ const onSubmit = async event => {
     const { hits, totalHits } = await pixabay.getPhotos();
     if (hits.length === 0) {
       return Notify.failure(
-        'Sorry, there are no images matching your search query. Please try again.'
+        'Вибачте, немає зображень, які відповідають вашому пошуковому запиту. Будь ласка спробуйте ще раз.',
+        initNotiflix
       );
     }
-    Notify.success(`Hooray! We found ${totalHits} images.`);
+    Notify.success(
+      `Ура! Ми знайшли ${totalHits} зображень за запитом "${query}".`,
+      initNotiflix
+    );
     createCard(hits);
     pixabay.calculateTotalPages(totalHits);
     if (pixabay.isShowLoadMore) {
@@ -79,7 +88,8 @@ const onSubmit = async event => {
   } catch (error) {
     Notify.failure(
       error.message,
-      'Sorry, something went wrong here. Please try again!'
+      'Вибачте, тут щось пішло не так. Будь ласка спробуйте ще раз!',
+      initNotiflix
     );
     clearPage();
   } finally {
