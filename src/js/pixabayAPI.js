@@ -1,52 +1,61 @@
 import axios from 'axios';
 
-export default class imageApiService {
-  constructor() {
-    this.searchQuery = '';
-    this.page = 1;
-    this.perPage = 40;
-    this.totalHits = 0;
-  }
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
-  async fetchImages() {
-    const KEY_API = '30736831-5d9a33b1aa7d5f5197006ba7d';
-    const URL_API = 'https://pixabay.com/api/';
-    const parametrs = new URLSearchParams({
-      key: KEY_API,
-      q: this.query,
-      image_type: 'photo',
+axios.defaults.baseURL = ' https://pixabay.com/api/';
+
+// Pagination and HTTP requests
+export default class PixabayAPI {
+  #query = '';
+  #page = 1;
+  #totalPages = 0;
+  #perPage = 40;
+  #params = {
+    params: {
+      key: '30736831-5d9a33b1aa7d5f5197006ba7d',
       orientation: 'horizontal',
-      per_page: this.perPage,
-      page: this.page,
-    });
-    const url = `${URL_API}?${parametrs}`;
-    this.incrementPage();
-    const response = await axios.get(url);
-    this.totalHits = response.data.totalHits;
-    if (!response.data.hits) {
-      throw new Error('Error');
-    }
-    return response.data.hits;
-  }
+      image_type: 'photo',
+      safesearch: 'true',
+      per_page: 40,
+    },
+  };
 
-  getFetchElNum() {
-    return this.perPage * this.page;
-  }
-
-  incrementPage() {
-    this.page += 1;
-  }
-
-  resetPage() {
-    this.page = 1;
+  async getPhotos() {
+    const urlAXIOS = `?q=${this.#query}&page=${this.#page}`;
+    const { data } = await axios.get(urlAXIOS, this.#params);
+    return data;
   }
 
   get query() {
-    return this.searchQuery;
+    return this.#query;
   }
 
   set query(newQuery) {
-    this.searchQuery = newQuery;
-    this.resetPage();
+    this.#query = newQuery;
+  }
+
+  incrementPage() {
+    this.#page += 1;
+  }
+
+  resetPage() {
+    this.#page = 1;
+  }
+
+  calculateTotalPages(total) {
+    this.#totalPages = Math.ceil(total / this.#perPage);
+  }
+
+  get isShowLoadMore() {
+    return this.#page < this.#totalPages;
+  }
+
+  totalPages(totalHits) {
+    const pageAmount = totalHits / this.#perPage - this.#page;
+    if (pageAmount < 0) {
+      return Notify.info(
+        "We're sorry, but you've reached the end of search results."
+      );
+    }
   }
 }

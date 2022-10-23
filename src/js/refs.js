@@ -1,6 +1,6 @@
 export const refs = {
-  searchForm: document.querySelector('#search-form'),
-  imgGallery: document.querySelector('#gallery'),
-  loadMoreBtn: document.querySelector('#load-more'),
-  loadSpinner: document.querySelector('#loading-container'),
+  form: document.querySelector('#search-form'),
+  list: document.querySelector('#gallery'),
+  spinner: document.querySelector('.js-spinner'),
+  backdrop: document.querySelector('[data-load]'),
 };

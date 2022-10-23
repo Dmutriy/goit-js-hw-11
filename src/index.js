@@ -1,112 +1,95 @@
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
-import { initNotiflix } from './js/initNotiflix';
 
-import throttle from 'lodash.throttle';
-import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import photoCardsTpl from './templates/photo-cards.hbs';
 
-import imageApiService from './js/pixabayAPI';
+import PixabayAPI from './js/pixabayAPI';
+import createCard from './js/cardMarkup';
 import { refs } from './js/refs';
+import { spinnerPlay, spinnerStop } from './js/spinner';
 
-const searchImageService = new imageApiService();
-const lightbox = new SimpleLightbox('.gallery a');
+const pixabay = new PixabayAPI();
 
-refs.searchForm.addEventListener('submit', onSearch);
-refs.loadMoreBtn.addEventListener('click', onLoadMore);
-window.addEventListener('scroll', throttle(infiniteScroll, 500));
+const callback = async function (entries, observer) {
+  entries.forEach(async entry => {
+    if (entry.isIntersecting && entry.intersectionRect.bottom > 550) {
+      pixabay.incrementPage();
+      observer.unobserve(entry.target);
 
-let bottomReached = false;
+      try {
+        spinnerPlay();
+        const { hits, totalHits } = await pixabay.getPhotos();
+        createCard(hits);
+        pixabay.totalPages(totalHits);
 
-async function onSearch(event) {
+        if (pixabay.isShowLoadMore) {
+          const target = document.querySelector('.photo-card:last-child');
+          io.observe(target);
+        }
+      } catch (error) {
+        Notify.failure(
+          error.message,
+          'Sorry, something went wrong here. Please try again!'
+        );
+        clearPage();
+      } finally {
+        spinnerStop();
+      }
+    }
+  });
+};
+
+const options = {
+  root: null,
+  rootMargin: '100px',
+  threshold: 1.0,
+};
+
+const io = new IntersectionObserver(callback, options);
+
+const onSubmit = async event => {
   event.preventDefault();
 
-  clearGallery();
-  const inputValue = event.currentTarget.elements.query.value;
-  if (inputValue === '') {
-    return;
+  const {
+    elements: { searchQuery },
+  } = event.currentTarget;
+  const query = searchQuery.value.trim().toLowerCase();
+
+  if (!query) {
+    return Notify.failure('Oops, you should type something for search...');
   }
-  searchImageService.query = inputValue;
-  searchImageService.resetPage();
+
+  pixabay.query = query;
+  clearPage();
+
   try {
-    await searchImageService.fetchImages().then(appendImageGalleryMarkup);
-    if (searchImageService.totalHits !== 0) {
-      Notify.success(
-        `Ура! Ми знайшли ${searchImageService.totalHits} зображень.`,
-        initNotiflix
+    spinnerPlay();
+    const { hits, totalHits } = await pixabay.getPhotos();
+    if (hits.length === 0) {
+      return Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
       );
     }
-    scrollToTop();
-    onSearchHits();
-    lightbox.refresh();
+    Notify.success(`Hooray! We found ${totalHits} images.`);
+    createCard(hits);
+    pixabay.calculateTotalPages(totalHits);
+    if (pixabay.isShowLoadMore) {
+      const target = document.querySelector('.photo-card:last-child');
+      io.observe(target);
+    }
   } catch (error) {
-    console.log(error);
-  }
-}
-
-async function onLoadMore() {
-  if (bottomReached) {
-    hideLoading();
-    return;
-  }
-  hideLoading();
-  searchImageService.incrementPage();
-  await searchImageService.fetchImages().then(appendImageGalleryMarkup);
-  onSearchHits();
-  lightbox.refresh();
-  showLoading();
-  if (searchImageService.totalHits <= searchImageService.getFetchElNum()) {
-    bottomReached = true;
-    Notify.info(
-      `Вибачте, але ви досягли кінця пошуку результатів.`,
-      initNotiflix
-    );
-    hideLoading();
-    return;
-  }
-}
-
-function appendImageGalleryMarkup(hits) {
-  const markup = photoCardsTpl(hits);
-  refs.imgGallery.insertAdjacentHTML('beforeend', markup);
-  showLoading();
-}
-
-function clearGallery() {
-  refs.imgGallery.innerHTML = '';
-}
-
-function onSearchHits() {
-  if (searchImageService.totalHits === 0) {
     Notify.failure(
-      'Вибачте, немає зображень, які відповідають вашому пошуковому запиту. Будь ласка спробуйте ще раз.',
-      initNotiflix
+      error.message,
+      'Sorry, something went wrong here. Please try again!'
     );
-    hideLoading();
+    clearPage();
+  } finally {
+    spinnerStop();
   }
-}
+};
 
-function infiniteScroll() {
-  const documentRect = document.documentElement.getBoundingClientRect();
-  if (documentRect.bottom < document.documentElement.clientHeight + 1400) {
-    onLoadMore();
-  }
-}
+refs.form.addEventListener('submit', onSubmit);
 
-function scrollToTop() {
-  const { top: cardTop } = refs.imgGallery.getBoundingClientRect();
-  window.scrollBy({
-    top: cardTop - 100,
-    behavior: 'smooth',
-  });
-}
-
-function showLoading() {
-  refs.loadMoreBtn.classList.remove('is-hidden');
-  refs.loadSpinner.classList.remove('is-hidden');
-}
-
-function hideLoading() {
-  refs.loadMoreBtn.classList.add('is-hidden');
-  refs.loadSpinner.classList.add('is-hidden');
+function clearPage() {
+  pixabay.resetPage();
+  refs.list.innerHTML = '';
 }
